@@ -1,0 +1,16 @@
+usage = 'House price predict'
+name = 'houseprice'
+task = 'regression'
+target_type = 'Numerical'
+feat_type = 'Numerical'
+metric = 'r2_metric'
+feat_num = 18
+target_num = 1
+label_num = NA
+train_num = 12967
+valid_num = 4322
+test_num = 4324
+has_categorical = 0
+has_missing = 0
+is_sparse = 0
+time_budget = 499
