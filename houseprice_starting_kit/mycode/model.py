@@ -78,7 +78,11 @@ class model:
         Use data_converter.convert_to_num() to convert to the category number format.
         For regression, labels are continuous values.
         '''
-
+        Prepro = Preprocessor()
+        transformer1=Prepro.pip1(X,y)
+    
+        X = transformer1.fit_transform(X, y)
+        
         self.num_train_samples = len(X)
         if X.ndim>1: self.num_feat = len(X[0])
         print("FIT: dim(X)= [{:d}, {:d}]".format(self.num_train_samples, self.num_feat))
@@ -119,6 +123,9 @@ class model:
         Scikit-learn also has a function predict-proba, we do not require it.
         The function predict eventually can return probabilities.
         '''
+        Prepro = Preprocessor()
+        transformer1=Prepro.pip1(X)
+        X= transformer1.fit_transform(X)
         num_test_samples = len(X)
         if X.ndim>1: num_feat = len(X[0])
         print("PREDICT: dim(X)= [{:d}, {:d}]".format(num_test_samples, num_feat))

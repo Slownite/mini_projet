@@ -67,6 +67,7 @@ class Preprocessor(BaseEstimator):
          estimators = [('imputer',Imputer()),('scaler',StandardScaler()),
                        ('reduct_dim', PCA()),
                        ('clustring',FeatureAgglomeration())]
+         cachedir = mkdtemp()
          pipe = Pipeline(estimators)#, memory=cachedir
          pipe.fit(X, y)
          return pipe
@@ -74,12 +75,13 @@ class Preprocessor(BaseEstimator):
      
     def pip1(self, X, y=None):
          estimators = [('imputer',Imputer()),('scaler',MinMaxScaler()),
-                       ('reduct_dim', PCA(n_components=12)),
+                       ('reduct_dim', PCA()),
                        ('clustring',FeatureAgglomeration())]
          cachedir = mkdtemp()
          pipe = Pipeline(estimators, memory=cachedir)
          #pipe.fit(X, y)
          self.transformer=pipe
+         print(self.transformer)
          return pipe
     
     
@@ -97,8 +99,8 @@ class Preprocessor(BaseEstimator):
          estimators = [('imputer',Imputer()),('scaler',MinMaxScaler()),
                        ('reduce_dim', LocallyLinearEmbedding()),
                        ('clustring',FeatureAgglomeration())]
-        
-         pipe = Pipeline(estimators)
+         cachedir = mkdtemp()
+         pipe = Pipeline(estimators, memory=cachedir)
          pipe.fit(X, y)
          return pipe
      

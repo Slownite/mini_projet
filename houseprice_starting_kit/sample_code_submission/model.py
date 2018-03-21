@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Mar 18 15:37:23 2018
+
+@author: snfdi
+"""
+
 '''
 Sample predictive model.
 You must supply at least 4 methods:
@@ -10,9 +17,14 @@ import pickle
 import numpy as np   # We recommend to use numpy arrays
 from os.path import isfile
 from sklearn import datasets, linear_model
-
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import cross_val_score
+from numpy import mean
+from prepro import Preprocessor
+from sys import argv, path
 class model:
     def __init__(self):
+        
         '''
         This constructor is supposed to initialize data members.
         Use triple quotes for function documentation.
@@ -21,6 +33,36 @@ class model:
         self.num_feat=1
         self.num_labels=1
         self.is_trained=False
+        
+        '''
+        Effectue une cross_validation simple sur l'ensemble des data
+        '''
+    
+    def cross_validation_simple(self, j, k, X, Y):
+        return cross_val_score(RandomForestRegressor(100, "mse", None, 2, j, 0.0, k), X, Y, cv=3)
+    '''
+    Effeectue un choix des meilleurs paramètre pour max_features etmin_samples_leaf
+    '''
+    def selection_hyperparam(self, X, Y):
+        scoreMax=0
+        param=dict()
+        tab=[0.3, 0.6, 0.9, 'auto']
+        
+        for j in range(1, 11, 1):
+            for k in range(0, 4, 1):
+                a=RandomForestRegressor(100, "mse", None, 2, j, 0.0, tab[k])
+                a.fit(X, Y)
+                error=self.cross_validation_simple(j, tab[k], X, Y)
+                score=mean(error)
+                print(" j: "+str(j)+" k :"+str(k))
+                
+                if(score>scoreMax):
+                    scoreMax=score
+                        
+                    param={'param2':j, 'param3':tab[k]}
+                    print('premier param '+str(param['param2'])+' deuxieme param '+str(param['param3']))
+        print('premier param final '+str(param['param2'])+' deuxieme param final '+str(param['param3']))
+        return RandomForestRegressor(100, "mse", None, 2, param['param2'], 0.0, param['param3'])
 
     def fit(self, X, y):
         '''
@@ -47,18 +89,21 @@ class model:
             print("ARRGH: number of samples in X and y do not match!")
 
         ###### Baseline models ######
-        from sklearn.naive_bayes import GaussianNB
-        from sklearn.linear_model import LinearRegression
-        from sklearn.tree import DecisionTreeRegressor
-        from sklearn.ensemble import RandomForestRegressor
-        from sklearn.neighbors import KNeighborsRegressor
+        #from sklearn.naive_bayes import GaussianNB
+        #from sklearn.linear_model import LinearRegression
+        #from sklearn.tree import DecisionTreeRegressor
+        #from sklearn.ensemble import RandomForestRegressor
+        #from sklearn.neighbors import KNeighborsRegressor
+        #from sklearn.svm import SVR
         # Comment and uncomment right lines in the following to choose the model
-        self.clf = GaussianNB()
+        #self.clf = GaussianNB()
         #self.clf = LinearRegression()
         #self.clf = DecisionTreeRegressor()
         #self.clf = RandomForestRegressor()
-        #self.clf = KNeighborsRegressor()
-
+       # self.clf = KNeighborsRegressor()
+        #self.clf = SVR(C=1.0, epsilon=0.2)
+        if self.is_trained==False:
+            self.clf=self.selection_hyperparam(X, y)
         self.clf.fit(X, y)
         self.is_trained=True
 
@@ -92,67 +137,3 @@ class model:
                 self = pickle.load(f)
             print("Model reloaded from: " + modelfile)
         return self
-
-
-######## Main function ########
-if __name__ == "__main__":
-    # Find the files containing corresponding data
-    # To find these files successfully:
-    # you should execute this "model.py" script in the folder "sample_code_submission"
-    # and the folder "public_data" should be in the SAME folder as the starting kit
-    path_to_training_data = "../../public_data/houseprice_train.data"
-    path_to_training_label = "../../public_data/houseprice_train.solution"
-    path_to_testing_data = "../../public_data/houseprice_test.data"
-    path_to_validation_data = "../../public_data/houseprice_valid.data"
-
-    # Find the program computing R sqaured score
-    path_to_metric = "../scoring_program/my_metric.py"
-    import imp
-    r2_score = imp.load_source('metric', path_to_metric).my_r2_score
-
-    # use numpy to load data
-    X_train = np.loadtxt(path_to_training_data)
-    y_train = np.loadtxt(path_to_training_label)
-    X_test = np.loadtxt(path_to_testing_data)
-    X_valid = np.loadtxt(path_to_validation_data)
-
-
-    # TRAINING ERROR
-    # generate an instance of our model (clf for classifier)
-    clf = model()
-    # train the model
-    clf.fit(X_train, y_train)
-    # to compute training error, first make predictions on training set
-    y_hat_train = clf.predict(X_train)
-    # then compare our prediction with true labels using the metric
-    training_error = r2_score(y_train, y_hat_train)
-
-
-    # CROSS-VALIDATION ERROR
-    from sklearn.model_selection import KFold
-    from numpy import zeros, mean
-    # 3-fold cross-validation
-    n = 3
-    kf = KFold(n_splits=n)
-    kf.get_n_splits(X_train)
-    i=0
-    scores = zeros(n)
-    for train_index, test_index in kf.split(X_train):
-        Xtr, Xva = X_train[train_index], X_train[test_index]
-        Ytr, Yva = y_train[train_index], y_train[test_index]
-        M = model()
-        M.fit(Xtr, Ytr)
-        Yhat = M.predict(Xva)
-        scores[i] = r2_score(Yva, Yhat)
-        print ('Fold', i+1, 'example metric = ', scores[i])
-        i=i+1
-    cross_validation_error = mean(scores)
-
-    # Print results
-    print("\nThe scores are: ")
-    print("Training: ", training_error)
-    print ('Cross-Validation: ', cross_validation_error)
-
-    print("""
-To compute these errors (scores) for other models, uncomment and comment the right lines in the "Baseline models" section of the class "model".
-To obtain a validation score, you should make a code submission with this model.py script on CodaLab.""")
