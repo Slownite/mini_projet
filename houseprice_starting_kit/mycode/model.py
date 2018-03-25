@@ -79,9 +79,9 @@ class model:
         For regression, labels are continuous values.
         '''
         Prepro = Preprocessor()
-        transformer1=Prepro.pip1(X,y)
-    
-        X = transformer1.fit_transform(X, y)
+        Prepro.pip0(10)
+        Prepro.fit_transform(X, y)
+        
         
         self.num_train_samples = len(X)
         if X.ndim>1: self.num_feat = len(X[0])
@@ -124,8 +124,9 @@ class model:
         The function predict eventually can return probabilities.
         '''
         Prepro = Preprocessor()
-        transformer1=Prepro.pip1(X)
-        X= transformer1.fit_transform(X)
+        Prepro.pip0(10)
+        Prepro.fit_transform(X,y=None)
+        
         num_test_samples = len(X)
         if X.ndim>1: num_feat = len(X[0])
         print("PREDICT: dim(X)= [{:d}, {:d}]".format(num_test_samples, num_feat))

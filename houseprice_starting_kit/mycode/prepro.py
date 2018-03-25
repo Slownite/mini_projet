@@ -34,27 +34,32 @@ from sklearn.manifold import LocallyLinearEmbedding
 from sklearn.cluster import FeatureAgglomeration
 
 class Preprocessor(BaseEstimator):
-    def __init__(self):
-        self.transformer = PCA(n_components=0.95)
+    def __init__(self, t=None):
+        self.transformer=t
+        
+
 
     def fit(self, X, y=None):
         return self.transformer.fit(X, y)
 
     def fit_transform(self, X, y=None):
         return self.transformer.fit_transform(X)
+    
+    def transform(self, X):
+        return self.transformer.transform(X)
  
     #des methode pour la selection de varriables
     #1-
     def selectFeatures(self, X, y=None):
         lsvc = LinearSVC(C=0.01, penalty="l1", dual=False).fit(X, y)
         model = SelectFromModel(lsvc, prefit=True)
-        return model
+        self.transformer=model
     
     def selectFeatures2(self, X, y=None):
         clf = ExtraTreesClassifier()
-        clf = clf.fit(X, y)
+        clf.fit(X, y)
         model = SelectFromModel(clf, prefit=True)
-        return model
+        self.transformer=model
     
     
     #utilisation des piplines pour la combinaision
@@ -62,47 +67,23 @@ class Preprocessor(BaseEstimator):
     #pour la normalisation des varriable sous la meme echelle on à preferé le scaler standard 
     #puisque ce la n a aucune influence sur les resultat
     
-    #dans ces 3 methode pip0,pip1,pip2 on a cobiné le pca avec les differentes methode de selection de varriable
-    def pip0(self, X, y=None):
-         estimators = [('imputer',Imputer()),('scaler',StandardScaler()),
-                       ('reduct_dim', PCA()),
-                       ('clustring',FeatureAgglomeration())]
-         pipe = Pipeline(estimators)#, memory=cachedir
-         pipe.fit(X, y)
-         return pipe
     
-     
-    def pip1(self, X, y=None):
-         estimators = [('imputer',Imputer()),('scaler',MinMaxScaler()),
-                       ('reduct_dim', PCA(n_components=12)),
-                       ('clustring',FeatureAgglomeration())]
-         cachedir = mkdtemp()
-         pipe = Pipeline(estimators, memory=cachedir)
-         #pipe.fit(X, y)
+    def pip0(self, dim=18):
+         estimators = [('scaler',StandardScaler()),
+                       ('imputer',Imputer()),
+                       ('reduct_dim', PCA(n_components =dim ))]
+         pipe = Pipeline(estimators)
          self.transformer=pipe
-         return pipe
     
     
-    #dans ces 3 methode pip3,pip4,pip5 on a cobiné le LLE avec les differentes methode de selection de varriable
-    def pip2(self, X, y=None):
+    
+    #dans cette  methode on utilise la LLA pour la reduction de dimension
+    def pip1(self, dim=18):
          estimators = [('imputer',Imputer()),('scaler',StandardScaler()),
-                       ('reduce_dim', LocallyLinearEmbedding()),
-                       ('clustring',FeatureAgglomeration())]
+                       ('reduce_dim', LocallyLinearEmbedding(n_components=dim))]
          pipe = Pipeline(estimators)
-         pipe.fit(X, y)
-         return pipe
+         self.transformer=pipe
     
-     
-    def pip3(self, X, y=None):
-         estimators = [('imputer',Imputer()),('scaler',MinMaxScaler()),
-                       ('reduce_dim', LocallyLinearEmbedding()),
-                       ('clustring',FeatureAgglomeration())]
-        
-         pipe = Pipeline(estimators)
-         pipe.fit(X, y)
-         return pipe
-     
-
     
         
         
@@ -132,40 +113,37 @@ if __name__=="__main__":
     x_test=np.copy(D.data['X_valid'])
     #test de la PCA
     
-    print("*teste de la methode PCA pour la reduction de dimension avec le Standardscaler pour la normalisation*" )
+    print("\n*teste de la methode PCA pour la reduction de dimension avec le Standardscaler pour la normalisation*\n" )
     
-    transformer1=Prepro.pip0(X,y)
+    Prepro.pip0(7)
+    D.data['X_train'] = Prepro.fit_transform(X, y)
+    D.data['X_valid'] = Prepro.transform(x_valid)
+    D.data['X_test'] = Prepro.transform(x_test)
     
-    D.data['X_train'] = transformer1.fit_transform(X, y)
-    D.data['X_valid'] = transformer1.transform(x_valid)
-    D.data['X_test'] = transformer1.transform(x_test)
-    
-    print("*** Transformed data with : PCA ***")
+    print("*** Transformed data with : PCA ***\n")
     print(D)
     
     
     
     #test de la LLE
 
-    print("*teste de la methode LLA pour la reduction de dimension avec le Standardscaler pour la normalisation*" )
-    transformer2=Prepro.pip2(X,y)
-    D.data['X_train'] = transformer2.fit_transform(X, y)
-    D.data['X_valid'] = transformer2.transform(x_valid)
-    D.data['X_test'] = transformer2.transform(x_test)
+    print("*\nteste de la methode LLA pour la reduction de dimension avec le Standardscaler pour la normalisation*" )
+    Prepro.pip1(5)
+    D.data['X_train'] = Prepro.fit_transform(X, y)
+    D.data['X_valid'] = Prepro.transform(x_valid)
+    D.data['X_test'] = Prepro.transform(x_test)
     
-    print("*** Transformed data : with LLE ***")
+    print("*** Transformed data : with LLE ***\n")
     print(D)
     
     
     #reduction de dimension avec la selection des varriables
     #cette prepmier nous le reduit on un espace de 9 dimensions
-    model_selection = Prepro.selectFeatures(X, y)
-    D.data['X_train'] = model_selection.transform(X)
-    D.data['X_valid']=model_selection.transform(x_valid)
-    D.data['X_test']=model_selection.transform(x_test)
-    estimators = [('imputer',Imputer()),('scaler',MinMaxScaler()),
-                       ('clustring',FeatureAgglomeration())]
-    cachedir = mkdtemp()
+    Prepro.selectFeatures(X, y)
+    D.data['X_train'] = Prepro.transform(X)
+    D.data['X_valid']=Prepro.transform(x_valid)
+    D.data['X_test']=Prepro.transform(x_test)
+    estimators = [('imputer',Imputer()),('scaler',MinMaxScaler())]
     
     #puis passe au etapes suivantes qu on regroupe dans des piplines
     pipe = Pipeline(estimators)
@@ -178,48 +156,52 @@ if __name__=="__main__":
    
     
     
-    print("*** Transformed data :  selction des features avec LinearSVC des svm ***")
+    print("\n*** Transformed data :  selction des features avec LinearSVC des svm ***\n")
     print(D)
     
     
     
     
     
-    #cette deuxieme methodes de selction nous permet de reduire la dimension de nos varriables à 8
-    model_selection2 = Prepro.selectFeatures2(X, y)
-    D.data['X_train'] = model_selection2.transform(X)
-    D.data['X_valid']=model_selection2.transform(x_valid)
-    D.data['X_test']=model_selection2.transform(x_test)
+    #cette deuxieme methodes de selction nous permet de reduire la dimension de nos varriables à 10
+    Prepro.selectFeatures2(X, y)
+    D.data['X_train'] = Prepro.transform(X)
+    D.data['X_valid']=Prepro.transform(x_valid)
+    D.data['X_test']=Prepro.transform(x_test)
     #on utilise le meme pipline que celui du test qui precede pour les autres traitements
     pipe = Pipeline(estimators)
     D.data['X_train']=pipe.fit_transform(D.data['X_train'], D.data['Y_train'])
     D.data['X_valid']=pipe._transform(D.data['X_valid'])
     D.data['X_test']=pipe._transform(D.data['X_test'])
     
-    print("*** Transformed data : selction des features avec  ExtraTreesClassifier des ensembles  ***")
+    print("\n*** Transformed data : selction des features avec  ExtraTreesClassifier des ensembles  ***\n")
     print(D)
+    
     
     #si il s'agit des espaces de tres grande dimension on peut combiner les deux methodes features_selection et PCA ou LLE
     #la maniere et la suivante 
     #1-on fait un selection des varriables
-    model_selection2 = Prepro.selectFeatures2(X, y)
-    D.data['X_train'] = model_selection.transform(X)
-    D.data['X_valid']=model_selection.transform(x_valid)
-    D.data['X_test']=model_selection.transform(x_test)
+    Prepro.selectFeatures2(X, y)
+    D.data['X_train'] = Prepro.transform(X)
+    D.data['X_valid']=Prepro.transform(x_valid)
+    D.data['X_test']=Prepro.transform(x_test)
+    
+    print('****notre dataFrame apres la selection des variables :***********')
+    print(D)
     #on utilise le meme pipline que celui du test qui precede pour les autres traitements
     
     #puis on reduit l'espace resultant avec la PCA par exemple
-    transformer3=Prepro.pip0(X,y)
+    transformer3=Prepro.pip0(5)
     
-    D.data['X_train'] = transformer3.fit_transform(D.data['X_train'], D.data['Y_train'])
-    D.data['X_valid'] = transformer3.transform(D.data['X_valid'])
-    D.data['X_test'] = transformer3.transform(D.data['X_test'])
-    print("*** Transformed data combinaison des deux methodes ***")
+    D.data['X_train'] = Prepro.fit_transform(D.data['X_train'], D.data['Y_train'])
+    D.data['X_valid'] = Prepro.transform(D.data['X_valid'])
+    D.data['X_test'] = Prepro.transform(D.data['X_test'])
+    print("\n*** Transformed data combinaison des deux methodes ***\n")
     print(D)
     
     #remarque :dans notre cas la PCA est suffisante car on n'a que 18 varriables 
     #mais cela devra etre plus efficace si on se met devant un espace de 50 ou 100 varriable explicatives
 
   
-    # Here show something that proves that the preprocessing worked fine
+    # Here show something that proves that the preprocessing worked fine"""
    

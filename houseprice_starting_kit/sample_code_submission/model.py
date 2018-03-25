@@ -78,7 +78,11 @@ class model:
         Use data_converter.convert_to_num() to convert to the category number format.
         For regression, labels are continuous values.
         '''
-
+        Prepro = Preprocessor()
+        Prepro.pip1(10)
+        Prepro.fit_transform(X, y)
+        
+        
         self.num_train_samples = len(X)
         if X.ndim>1: self.num_feat = len(X[0])
         print("FIT: dim(X)= [{:d}, {:d}]".format(self.num_train_samples, self.num_feat))
@@ -119,6 +123,10 @@ class model:
         Scikit-learn also has a function predict-proba, we do not require it.
         The function predict eventually can return probabilities.
         '''
+        Prepro = Preprocessor()
+        Prepro.pip1(10)
+        Prepro.fit_transform(X,y=None)
+        
         num_test_samples = len(X)
         if X.ndim>1: num_feat = len(X[0])
         print("PREDICT: dim(X)= [{:d}, {:d}]".format(num_test_samples, num_feat))
@@ -137,3 +145,67 @@ class model:
                 self = pickle.load(f)
             print("Model reloaded from: " + modelfile)
         return self
+
+
+######## Main function ########
+if __name__ == "__main__":
+    # Find the files containing corresponding data
+    # To find these files successfully:
+    # you should execute this "model.py" script in the folder "sample_code_submission"
+    # and the folder "public_data" should be in the SAME folder as the starting kit
+    path_to_training_data = "../../public_data/houseprice_train.data"
+    path_to_training_label = "../../public_data/houseprice_train.solution"
+    path_to_testing_data = "../../public_data/houseprice_test.data"
+    path_to_validation_data = "../../public_data/houseprice_valid.data"
+
+    # Find the program computing R sqaured score
+    path_to_metric = "../scoring_program/my_metric.py"
+    import imp
+    r2_score = imp.load_source('metric', path_to_metric).my_r2_score
+
+    # use numpy to load data
+    X_train = np.loadtxt(path_to_training_data)
+    y_train = np.loadtxt(path_to_training_label)
+    X_test = np.loadtxt(path_to_testing_data)
+    X_valid = np.loadtxt(path_to_validation_data)
+
+
+    # TRAINING ERROR
+    # generate an instance of our model (clf for classifier)
+    clf = model()
+    # train the model
+    clf.fit(X_train, y_train)
+    # to compute training error, first make predictions on training set
+    y_hat_train = clf.predict(X_train)
+    # then compare our prediction with true labels using the metric
+    training_error = r2_score(y_train, y_hat_train)
+
+
+    # CROSS-VALIDATION ERROR
+    from sklearn.model_selection import KFold
+    from numpy import zeros, mean
+    # 3-fold cross-validation
+    n = 3
+    kf = KFold(n_splits=n)
+    kf.get_n_splits(X_train)
+    i=0
+    scores = zeros(n)
+    for train_index, test_index in kf.split(X_train):
+        Xtr, Xva = X_train[train_index], X_train[test_index]
+        Ytr, Yva = y_train[train_index], y_train[test_index]
+        M = model()
+        M.fit(Xtr, Ytr)
+        Yhat = M.predict(Xva)
+        scores[i] = r2_score(Yva, Yhat)
+        print ('Fold', i+1, 'example metric = ', scores[i])
+        i=i+1
+    cross_validation_error = mean(scores)
+
+    # Print results
+    print("\nThe scores are: ")
+    print("Training: ", training_error)
+    print ('Cross-Validation: ', cross_validation_error)
+
+    print("""
+To compute these errors (scores) for other models, uncomment and comment the right lines in the "Baseline models" section of the class "model".
+To obtain a validation score, you should make a code submission with this model.py script on CodaLab.""")
