@@ -20,8 +20,8 @@ class visualisation:
     
     def correlation (self, data):
         corrmat = data.corr()
-        f, ax = plt.subplots(figsize=(12, 9))
-        sns.heatmap(corrmat, vmax=.8, square=True);
+        f, ax = plt.subplots(figsize=(15, 12))
+        sns.heatmap(corrmat, vmax=.9, square=True);
         
     def scatter_plot (self, data, cols):
         sns.set()
