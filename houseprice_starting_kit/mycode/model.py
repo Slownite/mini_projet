@@ -22,6 +22,9 @@ from sklearn.model_selection import cross_val_score
 from numpy import mean
 from prepro import Preprocessor
 from sys import argv, path
+import numpy as np
+import pandas as pd 
+
 class model:
     def __init__(self):
         
@@ -54,6 +57,7 @@ class model:
                 a.fit(X, Y)
                 error=self.cross_validation_simple(j, tab[k], X, Y)
                 score=mean(error)
+                print(score)
                 print(" j: "+str(j)+" k :"+str(k))
                 
                 if(score>scoreMax):
@@ -96,19 +100,26 @@ class model:
         #from sklearn.naive_bayes import GaussianNB
         #from sklearn.linear_model import LinearRegression
         #from sklearn.tree import DecisionTreeRegressor
-        #from sklearn.ensemble import RandomForestRegressor
+        from sklearn.ensemble import RandomForestRegressor
         #from sklearn.neighbors import KNeighborsRegressor
         #from sklearn.svm import SVR
         # Comment and uncomment right lines in the following to choose the model
         #self.clf = GaussianNB()
         #self.clf = LinearRegression()
         #self.clf = DecisionTreeRegressor()
-        #self.clf = RandomForestRegressor()
-       # self.clf = KNeighborsRegressor()
+        self.clf = RandomForestRegressor()
+        # self.clf = KNeighborsRegressor()
         #self.clf = SVR(C=1.0, epsilon=0.2)
         if self.is_trained==False:
-            self.clf=self.selection_hyperparam(X, y)
+             """self.clf=self.selection_hyperparam(X, y)
+             """
         self.clf.fit(X, y)
+        output_attendu=y
+        output=X
+        np.savetxt('output_attendu_training.txt', output_attendu)
+        np.savetxt('output_training.txt', output)        
+        
+        
         self.is_trained=True
 
     def predict(self, X):
@@ -133,8 +144,9 @@ class model:
         if (self.num_feat != num_feat):
             print("ARRGH: number of features in X does not match training data!")
         print("PREDICT: dim(y)= [{:d}, {:d}]".format(num_test_samples, self.num_labels))
-        return self.clf.predict(X)
-
+        output= self.clf.predict(X)
+        
+        return output
     def save(self, path="./"):
         pickle.dump(self, open(path + '_model.pickle', "wb"))
 
