@@ -114,10 +114,7 @@ class model:
              """self.clf=self.selection_hyperparam(X, y)
              """
         self.clf.fit(X, y)
-        output_attendu=y
-        output=X
-        np.savetxt('output_attendu_training.txt', output_attendu)
-        np.savetxt('output_training.txt', output)        
+               
         
         
         self.is_trained=True
@@ -187,8 +184,14 @@ if __name__ == "__main__":
     clf = model()
     # train the model
     clf.fit(X_train, y_train)
+    output_attendu=y_train
+        
+    np.savetxt('output_attendu_training.txt', output_attendu)
+        
     # to compute training error, first make predictions on training set
     y_hat_train = clf.predict(X_train)
+    output=y_hat_train
+    np.savetxt('output_training.txt', output)
     # then compare our prediction with true labels using the metric
     training_error = r2_score(y_train, y_hat_train)
 
