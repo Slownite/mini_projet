@@ -18,10 +18,13 @@ class visualisation:
     def histogramme_val (self, data, valeur):
         sns.distplot(data[valeur])
     
-    def correlation (self, data):
-        corrmat = data.corr()
-        f, ax = plt.subplots(figsize=(12, 9))
-        sns.heatmap(corrmat, vmax=.8, square=True);
+    def corelation (self, data):
+    	corrmat = data.corr()
+    	for i in range(40):
+    	    corrmat = corrmat.sort_values(by = ['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'grade', 'sqft_above', 'sqft_basement', 'yr_built', 'yr_renovated', 'zipcode', 'lat', 'long', 'sqft_living15', 'sqft_lot15', 'price'], ascending = False)
+    	    corrmat = corrmat.sort_values(by = ['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'grade', 'sqft_above', 'sqft_basement', 'yr_built', 'yr_renovated', 'zipcode', 'lat', 'long', 'sqft_living15', 'sqft_lot15', 'price'], axis = 1, ascending = False)
+   	f, ax = plt.subplots(figsize=(12, 9))
+    	sns.heatmap(corrmat, vmax=.8, square=True)
         
     def scatter_plot (self, data, cols):
         sns.set()
