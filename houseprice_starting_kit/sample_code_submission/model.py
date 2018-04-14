@@ -105,9 +105,9 @@ class model:
         #self.clf = DecisionTreeRegressor()
         #self.clf = RandomForestRegressor()
        # self.clf = KNeighborsRegressor()
-        #self.clf = SVR(C=1.0, epsilon=0.2)
-        if self.is_trained==False:
-            self.clf=self.selection_hyperparam(X, y)
+        self.clf = SVR(C=1.0, epsilon=0.2)
+        #if self.is_trained==False:
+         #   self.clf=self.selection_hyperparam(X, y)
         self.clf.fit(X, y)
         self.is_trained=True
 
