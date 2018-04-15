@@ -13,6 +13,7 @@ You must supply at least 4 methods:
 - save: saves the model.
 - load: reloads the model.
 '''
+from matplotlib import pyplot as plt
 import pickle
 import numpy as np   # We recommend to use numpy arrays
 from os.path import isfile
@@ -22,6 +23,9 @@ from sklearn.model_selection import cross_val_score
 from numpy import mean
 from prepro import Preprocessor
 from sys import argv, path
+import numpy as np
+import pandas as pd 
+
 class model:
     def __init__(self):
         
@@ -35,11 +39,42 @@ class model:
         self.is_trained=False
         
         '''
-        Effectue une cross_validation simple sur l'ensemble des data
+        Effectue une cross_validation simple sur l'ensemble des data pour choisir le meilleur nombre d'arbres
         '''
-    
+    def cross_validation_simple__(self, j, X, Y):
+         return cross_val_score(RandomForestRegressor(j), X, Y, cv=3)
+     '''
+        Effectue une cross_validation simple sur l'ensemble des data
+        '''                            
     def cross_validation_simple(self, j, k, X, Y):
-        return cross_val_score(RandomForestRegressor(100, "mse", None, 2, j, 0.0, k), X, Y, cv=3)
+        return cross_val_score(RandomForestRegressor(74, "mse", None, 2, j, 0.0, k), X, Y, cv=3)
+    '''
+    Effeectue un choix du meilleurs paramètre pour le nombre d'arbres
+    '''
+    def selection_hyperparam__(self, X, Y):
+        scoreMax=0
+        b=list()
+        e=list()
+        
+        for j in range(1, 100, 1):
+          a=RandomForestRegressor(j)
+          a.fit(X, Y)
+          error=self.cross_validation_simple__(j, X, Y)
+          score=mean(error)
+          b.append(score)
+          
+          print(score)
+          print(" j: "+str(j))
+                
+          if(score>scoreMax):
+              scoreMax=score
+              c=j
+              print("c= "+str(c))
+              e.append(c)
+        np.savetxt('valeur avec evolution.txt', e)
+        np.savetxt('score.txt', b)
+        return RandomForestRegressor(c)
+    
     '''
     Effeectue un choix des meilleurs paramètre pour max_features etmin_samples_leaf
     '''
@@ -50,10 +85,11 @@ class model:
         
         for j in range(1, 11, 1):
             for k in range(0, 4, 1):
-                a=RandomForestRegressor(100, "mse", None, 2, j, 0.0, tab[k])
+                a=RandomForestRegressor(72, "mse", None, 2, j, 0.0, tab[k])
                 a.fit(X, Y)
                 error=self.cross_validation_simple(j, tab[k], X, Y)
                 score=mean(error)
+                print(score)
                 print(" j: "+str(j)+" k :"+str(k))
                 
                 if(score>scoreMax):
@@ -79,7 +115,7 @@ class model:
         For regression, labels are continuous values.
         '''
         Prepro = Preprocessor()
-        Prepro.pip1(10)
+        Prepro.pip0(10)
         Prepro.fit_transform(X, y)
         
         
@@ -93,22 +129,26 @@ class model:
             print("ARRGH: number of samples in X and y do not match!")
 
         ###### Baseline models ######
-        #from sklearn.naive_bayes import GaussianNB
-        #from sklearn.linear_model import LinearRegression
-        #from sklearn.tree import DecisionTreeRegressor
-        #from sklearn.ensemble import RandomForestRegressor
-        #from sklearn.neighbors import KNeighborsRegressor
-        #from sklearn.svm import SVR
+        from sklearn.naive_bayes import GaussianNB
+        from sklearn.linear_model import LinearRegression
+        from sklearn.tree import DecisionTreeRegressor
+        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.neighbors import KNeighborsRegressor
+        from sklearn.svm import SVR
         # Comment and uncomment right lines in the following to choose the model
         #self.clf = GaussianNB()
         #self.clf = LinearRegression()
         #self.clf = DecisionTreeRegressor()
         #self.clf = RandomForestRegressor()
-       # self.clf = KNeighborsRegressor()
-        self.clf = SVR(C=1.0, epsilon=0.2)
-        #if self.is_trained==False:
-         #   self.clf=self.selection_hyperparam(X, y)
-        self.clf.fit(X, y)
+        #self.clf = KNeighborsRegressor()
+        #self.clf = SVR(C=1.0, epsilon=0.2)
+        if self.is_trained==False:
+            self.clf=self.selection_hyperparam(X, y)
+          #  self.clf=self.selection_hyperparam__(X, y)
+             
+          
+        
+        
         self.is_trained=True
 
     def predict(self, X):
@@ -124,7 +164,7 @@ class model:
         The function predict eventually can return probabilities.
         '''
         Prepro = Preprocessor()
-        Prepro.pip1(10)
+        Prepro.pip0(10)
         Prepro.fit_transform(X,y=None)
         
         num_test_samples = len(X)
@@ -133,8 +173,9 @@ class model:
         if (self.num_feat != num_feat):
             print("ARRGH: number of features in X does not match training data!")
         print("PREDICT: dim(y)= [{:d}, {:d}]".format(num_test_samples, self.num_labels))
-        return self.clf.predict(X)
-
+        output= self.clf.predict(X)
+        
+        return output
     def save(self, path="./"):
         pickle.dump(self, open(path + '_model.pickle', "wb"))
 
@@ -175,8 +216,14 @@ if __name__ == "__main__":
     clf = model()
     # train the model
     clf.fit(X_train, y_train)
+    
+        
+    
+        
     # to compute training error, first make predictions on training set
     y_hat_train = clf.predict(X_train)
+    
+    
     # then compare our prediction with true labels using the metric
     training_error = r2_score(y_train, y_hat_train)
 
@@ -185,7 +232,7 @@ if __name__ == "__main__":
     from sklearn.model_selection import KFold
     from numpy import zeros, mean
     # 3-fold cross-validation
-    n = 3
+    n = 2
     kf = KFold(n_splits=n)
     kf.get_n_splits(X_train)
     i=0
@@ -195,12 +242,17 @@ if __name__ == "__main__":
         Ytr, Yva = y_train[train_index], y_train[test_index]
         M = model()
         M.fit(Xtr, Ytr)
+        
         Yhat = M.predict(Xva)
+        
         scores[i] = r2_score(Yva, Yhat)
         print ('Fold', i+1, 'example metric = ', scores[i])
         i=i+1
     cross_validation_error = mean(scores)
-
+    output=Xva
+    output_attendu=Yva
+    np.savetxt('output_attendu_training.txt', output_attendu)
+    np.savetxt('output_training.txt', output)
     # Print results
     print("\nThe scores are: ")
     print("Training: ", training_error)

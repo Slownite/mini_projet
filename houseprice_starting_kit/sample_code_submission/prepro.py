@@ -35,7 +35,6 @@ from sklearn.cluster import FeatureAgglomeration
 
 class Preprocessor(BaseEstimator):
     def __init__(self, t=None):
-        #pour ce constructeur il prend un transformer en parametre
         self.transformer=t
         
 
@@ -48,14 +47,10 @@ class Preprocessor(BaseEstimator):
     
     def transform(self, X):
         return self.transformer.transform(X)
-     
-    """ pour ce qui suit on a creer des methode dans laquelles on cree de Objet transformer oubien des combinaison de ses 
-    dernier en utilisant des piplines puis on l'affecte au transformer de notre class prepro"""
-    
+ 
     #des methode pour la selection de varriables
-    #1-une methode pour la selection des variables en utilisant LinearSVC
+    #1-
     def selectFeatures(self, X, y=None):
-       
         lsvc = LinearSVC(C=0.01, penalty="l1", dual=False).fit(X, y)
         model = SelectFromModel(lsvc, prefit=True)
         self.transformer=model
@@ -70,12 +65,12 @@ class Preprocessor(BaseEstimator):
     #utilisation des piplines pour la combinaision
     #pour les valeur manquante on a utilisé la class Imputer 
     #pour la normalisation des varriable sous la meme echelle on à preferé le scaler standard 
-   
+    #puisque ce la n a aucune influence sur les resultat
+    
+    
     def pip0(self, dim=18):
-         """dans cette methode on a utilise le standard scaler pour la normalisation des resultats
-         et la PCA pour la reduction de dimension de sorte que la dimension de l'espce reduit est donnée en parametre 
-         dim ,par defaut pas de reduction"""
-         estimators = [('scalling',StandardScaler()),
+         estimators = [('scaler',StandardScaler()),
+                       ('imputer',Imputer()),
                        ('reduct_dim', PCA(n_components =dim ))]
          pipe = Pipeline(estimators)
          self.transformer=pipe
@@ -84,8 +79,6 @@ class Preprocessor(BaseEstimator):
     
     #dans cette  methode on utilise la LLA pour la reduction de dimension
     def pip1(self, dim=18):
-         """ pour cette methode elle a le meme principe que la precedente sauf qu'on a utiliser la methode LLA 
-         pour la reduction de la dimension aussi pour la dimension de l'esapace reduit elle est donnée en parametre"""
          estimators = [('imputer',Imputer()),('scaler',StandardScaler()),
                        ('reduce_dim', LocallyLinearEmbedding(n_components=dim))]
          pipe = Pipeline(estimators)
@@ -122,7 +115,7 @@ if __name__=="__main__":
     
     print("\n*teste de la methode PCA pour la reduction de dimension avec le Standardscaler pour la normalisation*\n" )
     
-    Prepro.pip0(10)
+    Prepro.pip0(7)
     D.data['X_train'] = Prepro.fit_transform(X, y)
     D.data['X_valid'] = Prepro.transform(x_valid)
     D.data['X_test'] = Prepro.transform(x_test)

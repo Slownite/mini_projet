@@ -39,15 +39,17 @@ class model:
         self.is_trained=False
         
         '''
-        Effectue une cross_validation simple sur l'ensemble des data
+        Effectue une cross_validation simple sur l'ensemble des data pour choisir le meilleur nombre d'arbres
         '''
     def cross_validation_simple__(self, j, X, Y):
          return cross_val_score(RandomForestRegressor(j), X, Y, cv=3)
-                               
+     '''
+        Effectue une cross_validation simple sur l'ensemble des data
+        '''                            
     def cross_validation_simple(self, j, k, X, Y):
-        return cross_val_score(RandomForestRegressor(100, "mse", None, 2, j, 0.0, k), X, Y, cv=3)
+        return cross_val_score(RandomForestRegressor(74, "mse", None, 2, j, 0.0, k), X, Y, cv=3)
     '''
-    Effeectue un choix des meilleurs paramètre pour max_features etmin_samples_leaf
+    Effeectue un choix du meilleurs paramètre pour le nombre d'arbres
     '''
     def selection_hyperparam__(self, X, Y):
         scoreMax=0
@@ -73,7 +75,9 @@ class model:
         np.savetxt('score.txt', b)
         return RandomForestRegressor(c)
     
-    
+    '''
+    Effeectue un choix des meilleurs paramètre pour max_features etmin_samples_leaf
+    '''
     def selection_hyperparam(self, X, Y):
         scoreMax=0
         param=dict()
